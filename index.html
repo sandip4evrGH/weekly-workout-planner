@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Weekly Workout Planner</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #EEF2FF;
+            --secondary: #10B981;
+            --danger: #EF4444;
+            --bg-color: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+            --grid-border: #F3F4F6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1.5rem 1rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: var(--text-muted);
+        }
+
+        .btn-success {
+            background-color: var(--secondary);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+
+        /* Main Container */
+        .app-container {
+            display: flex;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1200px;
+            align-items: flex-start;
+        }
+
+        /* Sidebar: Workouts List */
+        .sidebar {
+            background: var(--card-bg);
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            width: 240px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 1rem;
+        }
+
+        .sidebar h2 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--grid-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .workout-template {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: var(--primary-light);
+            border-radius: 6px;
+            cursor: grab;
+            border: 1px solid transparent;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--primary);
+            transition: transform 0.2s;
+            user-select: none;
+        }
+
+        .workout-template:active {
+            cursor: grabbing;
+        }
+
+        .workout-template.strength {
+            color: #B45309;
+            background: #FEF3C7;
+        }
+
+        .workout-template.cardio {
+            color: #B91C1C;
+            background: #FEE2E2;
+        }
+
+        .workout-template.flexibility {
+            color: #047857;
+            background: #D1FAE5;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal h3 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .btn-cancel {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        /* Weekly Calendar Grid (5 AM - 9 PM) */
+        .calendar-wrapper {
+            flex-grow: 1;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+            /* Enable horizontal scroll on small screens */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: 50px repeat(7, minmax(100px, 1fr));
+            grid-auto-rows: minmax(50px, auto);
+            border: 1px solid var(--border);
+            min-width: 750px;
+            /* Force minimum width to keep grid intact */
+        }
+
+        .cal-header {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 0;
+            text-align: center;
+            font-weight: 600;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.85rem;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .cal-header.empty {
+            background: white;
+            border-right: none;
+            border-bottom: 1px solid var(--border);
+            left: 0;
+            z-index: 30;
+        }
+
+        .time-label {
+            text-align: right;
+            padding-right: 0.4rem;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-weight: 600;
+            position: relative;
+            transform: translateY(-0.5rem);
+        }
+
+        .time-cell-container {
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--grid-border);
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 10;
+        }
+
+        .time-cell-container:last-child {
+            border-bottom: none;
+        }
+
+        .calendar-slot {
+            border-right: 1px solid var(--grid-border);
+            border-bottom: 1px solid var(--grid-border);
+            min-height: 50px;
+            padding: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .calendar-slot:active {
+            background: #EEF2FF;
+        }
+
+        .calendar-slot.drag-over {
+            background: #EEF2FF;
+            box-shadow: inset 0 0 0 2px var(--primary);
+        }
+
+        .event-card {
+            background-color: var(--primary-light);
+            border-left: 3px solid var(--primary);
+            padding: 0.4rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--primary);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 4px;
+            line-height: 1.2;
+            z-index: 15;
+            position: relative;
+        }
+
+        .event-card.strength {
+            border-left-color: #F59E0B;
+            background-color: #FEF3C7;
+            color: #B45309;
+        }
+
+        .event-card.cardio {
+            border-left-color: #EF4444;
+            background-color: #FEE2E2;
+            color: #B91C1C;
+        }
+
+        .event-card.flexibility {
+            border-left-color: #10B981;
+            background-color: #D1FAE5;
+            color: #047857;
+        }
+
+        .event-card strong {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+        }
+
+        .event-card span {
+            opacity: 0.85;
+            font-size: 0.7rem;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 900px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                position: static;
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 0.5rem;
+            }
+
+            .sidebar h2,
+            .sidebar p {
+                grid-column: 1 / -1;
+            }
+
+            .workout-template {
+                margin-bottom: 0;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .calendar-wrapper {
+                width: 100%;
+            }
+
+            .btn {
+                flex: 1 1 45%;
+                justify-content: center;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .toolbar,
+            .sidebar,
+            .header p {
+                display: none !important;
+            }
+
+            .app-container {
+                display: block;
+                max-width: 100%;
+                margin: 0;
+            }
+
+            .calendar-wrapper {
+                box-shadow: none;
+                border: none;
+                overflow: visible;
+            }
+
+            .calendar {
+                min-width: 100%;
+                border: 1px solid black;
+            }
+
+            .cal-header {
+                background: transparent;
+                color: black;
+                border-bottom: 2px solid black;
+            }
+
+            .time-cell-container {
+                background: transparent;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>Weekly Workout Master Plan</h1>
+        <p class="hide-on-print">Drag workouts from the menu into your schedule, or tap an empty slot.</p>
+    </div>
+
+    <div class="toolbar hide-on-print">
+        <!-- Action Buttons shrink and stack cleanly on mobile -->
+        <button class="btn btn-danger" onclick="clearAll()">
+            Clear All
+        </button>
+        <label class="btn btn-secondary" style="cursor: pointer;">
+            Load Plan
+            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importPlan(event)">
+        </label>
+        <button class="btn btn-secondary" onclick="exportPlan()">
+            Save Backup
+        </button>
+        <button class="btn btn-success" onclick="saveToCalendar()" style="flex-basis: 100%;">
+            Sync to Mobile (ICS)
+        </button>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar hide-on-print">
+            <h2>Add Workouts (Drag or Tap)</h2>
+            <div class="workout-template strength" draggable="true" data-title="Upper Body" data-dur="60"
+                data-cat="strength" onclick="openAddModal('Upper Body', 60, 'strength')">🏋️‍♀️ Upper Body</div>
+            <div class="workout-template strength" draggable="true" data-title="Lower Body" data-dur="60"
+                data-cat="strength" onclick="openAddModal('Lower Body', 60, 'strength')">🦵 Lower Body</div>
+            <div class="workout-template strength" draggable="true" data-title="Core Focus" data-dur="30"
+                data-cat="strength" onclick="openAddModal('Core Focus', 30, 'strength')">🧱 Core Focus</div>
+
+            <div class="workout-template cardio" draggable="true" data-title="Morning Walk" data-dur="30"
+                data-cat="cardio" onclick="openAddModal('Morning Walk', 30, 'cardio')">🚶‍♂️ Walking</div>
+            <div class="workout-template cardio" draggable="true" data-title="HIIT Interval" data-dur="30"
+                data-cat="cardio" onclick="openAddModal('HIIT Interval', 30, 'cardio')">🏃‍♀️ HIIT</div>
+            <div class="workout-template cardio" draggable="true" data-title="Cycling" data-dur="45" data-cat="cardio"
+                onclick="openAddModal('Cycling', 45, 'cardio')">🚴 Cycling</div>
+
+            <div class="workout-template flexibility" draggable="true" data-title="Yoga Flow" data-dur="45"
+                data-cat="flexibility" onclick="openAddModal('Yoga Flow', 45, 'flexibility')">🧘‍♀️ Yoga Flow</div>
+            <div class="workout-template flexibility" draggable="true" data-title="Stretching" data-dur="15"
+                data-cat="flexibility" onclick="openAddModal('Stretching', 15, 'flexibility')">🤸‍♂️ Stretching</div>
+
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:1rem;">Swipe horizontally on the calendar
+                grid below if you are on a small screen.</p>
+        </div>
+
+        <!-- Weekly Calendar -->
+        <div class="calendar-wrapper">
+            <div class="calendar" id="calendarGrid">
+                <!-- Headers -->
+                <div class="cal-header empty">Time</div>
+                <div class="cal-header">Mon</div>
+                <div class="cal-header">Tue</div>
+                <div class="cal-header">Wed</div>
+                <div class="cal-header">Thu</div>
+                <div class="cal-header">Fri</div>
+                <div class="cal-header">Sat</div>
+                <div class="cal-header">Sun</div>
+
+                <!-- Grid Cells injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit/Add Modal -->
+    <div class="modal-overlay" id="eventModal">
+        <div class="modal">
+            <h3 id="modalTitle">Schedule Workout</h3>
+            <input type="hidden" id="eventUid">
+
+            <div class="form-group">
+                <label>Workout Title</label>
+                <input type="text" id="evTitle" class="form-control" placeholder="e.g. Morning Jog">
+            </div>
+
+            <div class="form-group">
+                <label>Category</label>
+                <select id="evCategory" class="form-control">
+                    <option value="cardio">Cardio (Red)</option>
+                    <option value="strength">Strength (Yellow)</option>
+                    <option value="flexibility">Flexibility (Green)</option>
+                    <option value="default">General (Blue)</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Day</label>
+                    <select id="evDay" class="form-control">
+                        <option value="0">Monday</option>
+                        <option value="1">Tuesday</option>
+                        <option value="2">Wednesday</option>
+                        <option value="3">Thursday</option>
+                        <option value="4">Friday</option>
+                        <option value="5">Saturday</option>
+                        <option value="6">Sunday</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Start Time</label>
+                    <input type="time" id="evTime" class="form-control" value="08:00" min="05:00" max="21:00">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Duration (Mins)</label>
+                <input type="number" id="evDuration" class="form-control" value="30" min="10" max="180">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-danger" id="btnDelete" style="display:none; margin-right:auto;"
+                    onclick="deleteEvent()">Delete</button>
+                <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn" style="background:var(--primary);color:white;" onclick="saveEvent()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const START_HOUR = 5;
+        const END_HOUR = 21;
+
+        let events = [
+            { uid: '1', dayIdx: 0, hour: 7, minute: 0, title: 'Morning Walk', duration: 30, category: 'cardio' },
+            { uid: '2', dayIdx: 0, hour: 17, minute: 30, title: 'Upper Body', duration: 60, category: 'strength' },
+            { uid: '4', dayIdx: 2, hour: 7, minute: 0, title: 'Morning Walk', duration: 30, category: 'cardio' },
+            { uid: '7', dayIdx: 4, hour: 7, minute: 0, title: 'Yoga Flow', duration: 45, category: 'flexibility' },
+            { uid: '9', dayIdx: 5, hour: 9, minute: 0, title: 'Cycling', duration: 60, category: 'cardio' }
+        ];
+
+        const grid = document.getElementById('calendarGrid');
+        function formatHour(h) { let ampm = h >= 12 ? 'PM' : 'AM'; let f = h % 12; return `${f === 0 ? 12 : f} ${ampm}`; }
+        function pad0(num) { return num.toString().padStart(2, '0'); }
+
+        function renderCalendar() {
+            while (grid.children.length > 8) { grid.removeChild(grid.lastChild); }
+
+            for (let hour = START_HOUR; hour <= END_HOUR; hour++) {
+                let timeDiv = document.createElement('div');
+                timeDiv.className = 'time-cell-container';
+                timeDiv.innerHTML = `<div class="time-label">${formatHour(hour)}</div>`;
+                grid.appendChild(timeDiv);
+
+                for (let d = 0; d < 7; d++) {
+                    let slotDiv = document.createElement('div');
+                    slotDiv.className = 'calendar-slot';
+
+                    slotDiv.onclick = (e) => {
+                        if (e.target === slotDiv) openModalForSlot(d, hour);
+                    };
+
+                    // Drag Events
+                    slotDiv.addEventListener('dragover', (e) => { e.preventDefault(); slotDiv.classList.add('drag-over'); });
+                    slotDiv.addEventListener('dragleave', () => slotDiv.classList.remove('drag-over'));
+                    slotDiv.addEventListener('drop', (e) => {
+                        e.preventDefault(); slotDiv.classList.remove('drag-over');
+                        const dataString = e.dataTransfer.getData('text/plain');
+                        if (!dataString) return;
+                        try {
+                            const data = JSON.parse(dataString);
+                            events.push({ uid: Date.now().toString(), title: data.title, category: data.category, dayIdx: d, hour: hour, minute: 0, duration: parseInt(data.dur) });
+                            renderCalendar();
+                        } catch (err) { }
+                    });
+
+                    let slotEvents = events.filter(ev => ev.dayIdx === d && ev.hour === hour);
+                    slotEvents.forEach(ev => {
+                        let card = document.createElement('div');
+                        card.className = `event-card ${ev.category}`;
+                        let timeStr = `${formatHour(ev.hour).split(' ')[0]}:${pad0(ev.minute)} ${ev.hour >= 12 ? 'PM' : 'AM'}`;
+                        card.innerHTML = `<strong>${ev.title}</strong><span>${timeStr} (${ev.duration}m)</span>`;
+                        card.onclick = (e) => { e.stopPropagation(); openEditModal(ev); };
+                        slotDiv.appendChild(card);
+                    });
+
+                    grid.appendChild(slotDiv);
+                }
+            }
+        }
+
+        // Draggables
+        document.querySelectorAll('.workout-template').forEach(template => {
+            template.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', JSON.stringify({ title: template.dataset.title, dur: template.dataset.dur, category: template.dataset.cat }));
+            });
+        });
+
+        const modal = document.getElementById('eventModal');
+        const evTitle = document.getElementById('evTitle');
+        const evCat = document.getElementById('evCategory');
+        const evDay = document.getElementById('evDay');
+        const evTime = document.getElementById('evTime');
+        const evDuration = document.getElementById('evDuration');
+        const evUid = document.getElementById('eventUid');
+        const btnDelete = document.getElementById('btnDelete');
+        const modalTitle = document.getElementById('modalTitle');
+
+        function openModalForSlot(dayIdx, hour) {
+            modalTitle.innerText = "Schedule Workout";
+            evTitle.value = ""; evCat.value = "default"; evDay.value = dayIdx;
+            evTime.value = `${pad0(hour)}:00`; evDuration.value = 30; evUid.value = "";
+            btnDelete.style.display = "none"; modal.style.display = "flex";
+        }
+
+        // Added for mobile tap functionality on templates
+        function openAddModal(title, duration, category) {
+            modalTitle.innerText = "Add Recommended";
+            evTitle.value = title; evCat.value = category; evDay.value = 0;
+            evTime.value = "07:00"; evDuration.value = duration; evUid.value = "";
+            btnDelete.style.display = "none"; modal.style.display = "flex";
+        }
+
+        function openEditModal(eventObj) {
+            modalTitle.innerText = "Edit Workout";
+            evTitle.value = eventObj.title; evCat.value = eventObj.category;
+            evDay.value = eventObj.dayIdx; evTime.value = `${pad0(eventObj.hour)}:${pad0(eventObj.minute)}`;
+            evDuration.value = eventObj.duration; evUid.value = eventObj.uid;
+            btnDelete.style.display = "block"; modal.style.display = "flex";
+        }
+
+        function closeModal() { modal.style.display = "none"; }
+
+        function saveEvent() {
+            let [hh, mm] = (evTime.value || '07:00').split(':').map(Number);
+            if (hh < START_HOUR) hh = START_HOUR; if (hh > END_HOUR) hh = END_HOUR;
+            let dur = parseInt(evDuration.value) || 30;
+            let dIdx = parseInt(evDay.value) || 0;
+            let title = evTitle.value.trim() || 'Workout';
+            let cat = evCat.value;
+
+            if (evUid.value) {
+                let evRef = events.find(e => e.uid === evUid.value);
+                if (evRef) { evRef.title = title; evRef.category = cat; evRef.dayIdx = dIdx; evRef.hour = hh; evRef.minute = mm; evRef.duration = dur; }
+            } else {
+                events.push({ uid: Date.now().toString(), title, category: cat, dayIdx: dIdx, hour: hh, minute: mm, duration: dur });
+            }
+            closeModal(); renderCalendar();
+        }
+
+        function deleteEvent() {
+            if (evUid.value) events = events.filter(e => e.uid !== evUid.value);
+            closeModal(); renderCalendar();
+        }
+
+        function clearAll() {
+            if (confirm("Are you sure you want to clear your entire schedule?")) { events = []; renderCalendar(); }
+        }
+
+        function exportPlan() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(events));
+            const a = document.createElement('a'); a.href = dataStr; a.download = "my_workout_backup.json"; a.click();
+        }
+
+        function importPlan(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const loaded = JSON.parse(e.target.result);
+                    if (Array.isArray(loaded)) { events = loaded; renderCalendar(); alert("Backup loaded successfully!"); }
+                } catch (err) { alert("Invalid backup file."); }
+                document.getElementById('importFile').value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function saveToCalendar() {
+            if (events.length === 0) return alert("Schedule is empty.");
+            const getIcsDate = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            let ics = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//AI Planner//Weekly//EN\nCALSCALE:GREGORIAN\n`;
+            let base = new Date();
+            for (let week = 0; week < 4; week++) {
+                events.forEach(ev => {
+                    let d = new Date(base);
+                    let currentDay = d.getDay() === 0 ? 6 : d.getDay() - 1;
+                    d.setDate(d.getDate() + (ev.dayIdx - currentDay) + (week * 7));
+                    d.setHours(ev.hour, ev.minute, 0, 0);
+                    if (week === 0 && d < new Date()) d.setDate(d.getDate() + 7);
+
+                    ics += `BEGIN:VEVENT\nSUMMARY:${ev.title}\nDTSTART:${getIcsDate(d)}\nDTEND:${getIcsDate(new Date(d.getTime() + (ev.duration * 60000)))}\n`;
+                    ics += `DTSTAMP:${getIcsDate(new Date())}\nDESCRIPTION:Duration: ${ev.duration} mins.\nSTATUS:CONFIRMED\nEND:VEVENT\n`;
+                });
+            }
+            ics += `END:VCALENDAR`;
+            const a = document.createElement('a'); a.href = window.URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+            a.download = `my_weekly_calendar.ics`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        renderCalendar();
+    </script>
+</body>
+
+</html>
