@@ -710,14 +710,20 @@
             if (events.length === 0) return alert("Schedule is empty.");
             const getIcsDate = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
             let ics = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//AI Planner//Weekly//EN\nCALSCALE:GREGORIAN\n`;
-            let base = new Date();
+            let now = new Date();
             for (let week = 0; week < 4; week++) {
                 events.forEach(ev => {
-                    let d = new Date(base);
+                    let d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                     let currentDay = d.getDay() === 0 ? 6 : d.getDay() - 1;
-                    d.setDate(d.getDate() + (ev.dayIdx - currentDay) + (week * 7));
+                    let diff = ev.dayIdx - currentDay;
+
+                    d.setDate(d.getDate() + diff);
                     d.setHours(ev.hour, ev.minute, 0, 0);
-                    if (week === 0 && d < new Date()) d.setDate(d.getDate() + 7);
+
+                    if (d < now) {
+                        d.setDate(d.getDate() + 7);
+                    }
+                    d.setDate(d.getDate() + (week * 7));
 
                     ics += `BEGIN:VEVENT\nSUMMARY:${ev.title}\nDTSTART:${getIcsDate(d)}\nDTEND:${getIcsDate(new Date(d.getTime() + (ev.duration * 60000)))}\n`;
                     ics += `DTSTAMP:${getIcsDate(new Date())}\nDESCRIPTION:Duration: ${ev.duration} mins.\nSTATUS:CONFIRMED\nEND:VEVENT\n`;
